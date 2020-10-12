@@ -99,7 +99,7 @@ module.exports = app => {
     }
   );
 
-  // List contact numbers
+  // Find contact information
   router.get(
     '/contacts/:contactId',
     jwt({ secret: JWT_SECRET }),
@@ -149,6 +149,28 @@ module.exports = app => {
       });
 
       res.status(201).json({ newContact });
+    }
+  );
+
+  // Find contact information
+  router.delete(
+    '/contacts/:contactId',
+    jwt({ secret: JWT_SECRET }),
+    json(),
+    async (req, res) => {
+      const { contactId } = req.params;
+      console.log({ contactId });
+      try {
+        const existingUser = await Contact.findById(contactId);
+        console.log({ existingUser });
+        if (existingUser === null) {
+          res.status(400).json({ message: 'Contact not found' });
+        }
+        const contact = await Contact.deleteOne({ _id: contactId });
+        res.status(204).json(contact);
+      } catch (ex) {
+        res.status(400).json({ ex });
+      }
     }
   );
 
