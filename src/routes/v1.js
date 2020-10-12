@@ -10,9 +10,16 @@ const User = require('../models/user.model');
 const Contact = require('../models/contact.model');
 
 const { JWT_SECRET } = process.env;
+const allowedMethods = require('../middlewares/allowedMethods');
 
 module.exports = app => {
   const router = express.Router();
+
+  // Handling allowed methods for each endpoint
+  router.all('/users', allowedMethods(['POST']));
+  router.all('/sessions', allowedMethods(['POST']));
+  router.all('/contacts', allowedMethods(['GET', 'POST']));
+  router.all('/contacts/:contactId', allowedMethods(['GET', 'DELETE']));
 
   // CreateUser
   router.post('/users', json(), async (req, res) => {
@@ -99,23 +106,6 @@ module.exports = app => {
     }
   );
 
-  // Find contact information
-  router.get(
-    '/contacts/:contactId',
-    jwt({ secret: JWT_SECRET }),
-    json(),
-    async (req, res) => {
-      const { contactId } = req.params;
-      try {
-        const contact = await Contact.findById(contactId);
-        res.status(200).json(contact);
-      } catch (ex) {
-        console.log({ ex });
-        res.status(400).json({ message: 'Contact not found' });
-      }
-    }
-  );
-
   // Create number
   router.post(
     '/contacts',
@@ -153,16 +143,33 @@ module.exports = app => {
   );
 
   // Find contact information
+  router.get(
+    '/contacts/:contactId',
+    jwt({ secret: JWT_SECRET }),
+    json(),
+    async (req, res) => {
+      const { contactId } = req.params;
+      try {
+        const contact = await Contact.findById(contactId);
+        if (contact === null) {
+          res.status(400).json({ message: 'Contact not found' });
+        }
+        res.status(200).json(contact);
+      } catch (ex) {
+        res.status(400).json({ message: 'Contact not found' });
+      }
+    }
+  );
+
+  // Delete contact
   router.delete(
     '/contacts/:contactId',
     jwt({ secret: JWT_SECRET }),
     json(),
     async (req, res) => {
       const { contactId } = req.params;
-      console.log({ contactId });
       try {
         const existingUser = await Contact.findById(contactId);
-        console.log({ existingUser });
         if (existingUser === null) {
           res.status(400).json({ message: 'Contact not found' });
         }
