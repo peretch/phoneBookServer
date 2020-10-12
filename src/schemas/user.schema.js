@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { User } = require('../models');
 
 module.exports = new mongoose.Schema({
   name: {
