@@ -4,9 +4,10 @@ const express = require('express');
 const { json } = require('body-parser');
 const { sign, decode } = require('jsonwebtoken');
 const { compare, hash } = require('bcrypt');
-const checkJwt = require('express-jwt');
+const jwt = require('express-jwt');
 
 const User = require('../models/user.model');
+const Phone = require('../models/phone.model');
 
 const { JWT_SECRET } = process.env;
 
@@ -63,6 +64,64 @@ module.exports = app => {
         });
       });
   });
+
+  // List phone numbers
+  router.get(
+    '/phones',
+    jwt({ secret: JWT_SECRET }),
+    json(),
+    async (req, res) => {
+      let { page } = req.body;
+
+      if (typeof page !== 'undefined' && typeof page !== 'number') {
+        res.status(400).json('The page attribute must be of type number.');
+      }
+
+      if (typeof page === 'undefined') {
+        page = 1;
+      }
+
+      const customLabels = {
+        docs: 'phones',
+        totalDocs: 'totalPhones',
+      };
+
+      const paginationOptions = {
+        page,
+        limit: 10,
+        customLabels,
+      };
+
+      const phones = await Phone.paginate({}, paginationOptions);
+      res.status(200).json(phones);
+    }
+  );
+
+  // Create number
+  router.post(
+    '/phones',
+    jwt({ secret: JWT_SECRET }),
+    json(),
+    async (req, res) => {
+      const auth = req.get('Authorization');
+      const { username } = decode(auth.split(' ')[1], JWT_SECRET); // bearer token
+
+      const existingUser = await User.findOne({ email: username });
+      if (
+        typeof existingUser === 'undefined' ||
+        typeof existingUser._id === 'undefined'
+      ) {
+        res.status(401).json({
+          message: `The username with email ${username} was not found.`,
+        });
+      }
+
+      const { number } = req.body;
+      const newPhone = await Phone.create({ user: existingUser._id, number });
+
+      res.status(201).json({ newPhone });
+    }
+  );
 
   app.use('/v1', router);
 };
