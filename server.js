@@ -9,7 +9,7 @@ require('dotenv').config();
 
 setRoutes(app);
 
-const { APP_PORT, DB_HOST, DB_DATABASE } = process.env;
+const { APP_PORT, APP_HOST, DB_HOST, DB_DATABASE } = process.env;
 
 mongoose
   .connect(`mongodb://${DB_HOST}/${DB_DATABASE}`, {
@@ -20,7 +20,7 @@ mongoose
   .then(() => {
     console.log('Database ready');
     setRoutes(app);
-    app.listen(APP_PORT, () => {
+    app.listen(APP_PORT, APP_HOST, () => {
       console.log(`Listening on port ${APP_PORT}`);
     });
   })

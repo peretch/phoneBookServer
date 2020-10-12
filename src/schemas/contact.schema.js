@@ -3,7 +3,7 @@ const mongoosePaginate = require('mongoose-paginate-v2');
 
 const { User } = require('../models');
 
-const PhoneSchema = new mongoose.Schema(
+const ContactSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -14,7 +14,11 @@ const PhoneSchema = new mongoose.Schema(
         message: 'El usuario ingresado no existe',
       },
     },
-    number: {
+    name: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+    },
+    phone: {
       type: mongoose.Schema.Types.String,
       required: true,
     },
@@ -24,6 +28,6 @@ const PhoneSchema = new mongoose.Schema(
   }
 );
 
-PhoneSchema.plugin(mongoosePaginate);
+ContactSchema.plugin(mongoosePaginate);
 
-module.exports = PhoneSchema;
+module.exports = ContactSchema;

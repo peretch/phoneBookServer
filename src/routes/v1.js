@@ -7,7 +7,7 @@ const { compare, hash } = require('bcrypt');
 const jwt = require('express-jwt');
 
 const User = require('../models/user.model');
-const Phone = require('../models/phone.model');
+const Contact = require('../models/contact.model');
 
 const { JWT_SECRET } = process.env;
 
@@ -15,59 +15,55 @@ module.exports = app => {
   const router = express.Router();
 
   // CreateUser
-  router.post('/users', json(), (req, res) => {
+  router.post('/users', json(), async (req, res) => {
     const userBody = req.body;
-    hash(userBody.password, 10)
-      .then(hashed =>
-        User.create({
-          name: userBody.name,
-          email: userBody.email,
-          password: hashed,
-        })
-      )
-      .then(newUser => {
-        const token = sign({}, JWT_SECRET);
-        res.status(201).json({
-          user: newUser,
-          token,
-        });
-      })
-      .catch(error => {
-        if (error.code === 11000) {
-          res.status(401).json({
-            message: `The username with email ${error.keyValue.email} alredy exists.`,
-          });
-        }
-        res.status(500).json({
-          error,
-        });
+
+    try {
+      const hashed = await hash(userBody.password, 10);
+      const newUser = await User.create({
+        name: userBody.name,
+        email: userBody.email,
+        password: hashed,
       });
+      const token = await sign({}, JWT_SECRET);
+      res.status(202).json({
+        user: newUser,
+        token,
+      });
+    } catch (ex) {
+      if (ex.code === 11000) {
+        res.status(401).json({
+          message: `The username with email ${ex.keyValue.email} alredy exists.`,
+        });
+      }
+      res.status(500).json({ ex });
+    }
   });
 
   // Login
-  router.post('/sessions', json(), (req, res) => {
+  router.post('/sessions', json(), async (req, res) => {
     const { email, password } = req.body;
-    User.findOne({ email })
-      .then(userDoc =>
-        Promise.all([userDoc, compare(password, userDoc.password)])
-      )
-      .then(([{ email: username }]) => {
-        const token = sign({ username }, JWT_SECRET);
-        res.status(200).json({
-          user: email,
-          token,
-        });
-      })
-      .catch(error => {
-        res.status(400).json({
-          error: error.message,
-        });
+    const userDoc = await User.findOne({ email });
+
+    try {
+      const login = await compare(password, userDoc.password);
+
+      if (!login) {
+        res.status(401).json({ message: 'Invalid credentials' });
+      }
+      const token = sign({ email }, JWT_SECRET);
+      res.status(200).json({
+        user: email,
+        token,
       });
+    } catch (ex) {
+      res.status(500).json({ message: 'An error has ocurred' });
+    }
   });
 
-  // List phone numbers
+  // List contact numbers
   router.get(
-    '/phones',
+    '/contacts',
     jwt({ secret: JWT_SECRET }),
     json(),
     async (req, res) => {
@@ -82,29 +78,60 @@ module.exports = app => {
       }
 
       const customLabels = {
-        docs: 'phones',
-        totalDocs: 'totalPhones',
+        docs: 'contacts',
+        totalDocs: 'totalContacts',
       };
 
       const paginationOptions = {
         page,
         limit: 10,
         customLabels,
+        select: '_ID name phone',
+        sort: 'name',
       };
 
-      const phones = await Phone.paginate({}, paginationOptions);
-      res.status(200).json(phones);
+      try {
+        const contacts = await Contact.paginate({}, paginationOptions);
+        res.status(200).json(contacts);
+      } catch (ex) {
+        res.status(500).json({ ex });
+      }
+    }
+  );
+
+  // List contact numbers
+  router.get(
+    '/contacts/:contactId',
+    jwt({ secret: JWT_SECRET }),
+    json(),
+    async (req, res) => {
+      const { contactId } = req.params;
+      try {
+        const contact = await Contact.findById(contactId);
+        res.status(200).json(contact);
+      } catch (ex) {
+        console.log({ ex });
+        res.status(400).json({ message: 'Contact not found' });
+      }
     }
   );
 
   // Create number
   router.post(
-    '/phones',
+    '/contacts',
     jwt({ secret: JWT_SECRET }),
     json(),
     async (req, res) => {
       const auth = req.get('Authorization');
       const { username } = decode(auth.split(' ')[1], JWT_SECRET); // bearer token
+
+      const { name, phone } = req.body;
+      if (!name) {
+        res.status(400).send('name parameter is required');
+      }
+      if (!phone) {
+        res.status(400).send('phone parameter is required');
+      }
 
       const existingUser = await User.findOne({ email: username });
       if (
@@ -115,11 +142,13 @@ module.exports = app => {
           message: `The username with email ${username} was not found.`,
         });
       }
+      const newContact = await Contact.create({
+        user: existingUser._id,
+        name,
+        phone,
+      });
 
-      const { number } = req.body;
-      const newPhone = await Phone.create({ user: existingUser._id, number });
-
-      res.status(201).json({ newPhone });
+      res.status(201).json({ newContact });
     }
   );
 
