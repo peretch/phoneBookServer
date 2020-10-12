@@ -43,7 +43,7 @@ module.exports = app => {
           message: `The username with email ${ex.keyValue.email} alredy exists.`,
         });
       }
-      res.status(500).json({ ex });
+      res.status(400).json({ error: ex });
     }
   });
 
@@ -152,11 +152,11 @@ module.exports = app => {
       try {
         const contact = await Contact.findById(contactId);
         if (contact === null) {
-          res.status(400).json({ message: 'Contact not found' });
+          res.status(404).json({ message: 'Contact not found' });
         }
         res.status(200).json(contact);
       } catch (ex) {
-        res.status(400).json({ message: 'Contact not found' });
+        res.status(400).json({ error: ex });
       }
     }
   );
@@ -176,7 +176,7 @@ module.exports = app => {
         const contact = await Contact.deleteOne({ _id: contactId });
         res.status(204).json(contact);
       } catch (ex) {
-        res.status(400).json({ ex });
+        res.status(400).json({ error: ex });
       }
     }
   );
