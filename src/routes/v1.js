@@ -181,5 +181,11 @@ module.exports = app => {
     }
   );
 
+  router.use((req, res, next) => {
+    res
+      .status(404)
+      .json({ message: 'The URL you are looking for was not found :(' });
+  });
+
   app.use('/v1', router);
 };
