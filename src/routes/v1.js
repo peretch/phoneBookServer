@@ -1,26 +1,36 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 
 const { json } = require('body-parser');
 const { sign, decode } = require('jsonwebtoken');
 const jwt = require('express-jwt');
 
-const cors = require('cors');
-const Contact = require('../models/contact.model');
-
 const { JWT_SECRET } = process.env;
 const allowedMethods = require('../middlewares/allowedMethods');
 
+/**
+ * Services
+ */
 const {
   searchUserByEmail,
   createUser,
   authenticateUser,
 } = require('../services/userService');
+
+const {
+  createContact,
+  deleteContact,
+  searchContactsPaginated,
+  findContactById,
+} = require('../services/contactService');
+
 const { createToken } = require('../services/jwtService');
 
 module.exports = app => {
   const router = express.Router();
 
+  // To avoid HTTP errors in my environment
   router.use(cors());
 
   // Handling allowed methods for each endpoint
@@ -73,7 +83,6 @@ module.exports = app => {
     jwt({ secret: JWT_SECRET }),
     json(),
     async (req, res) => {
-
       const auth = req.get('Authorization');
       const { email } = decode(auth.split(' ')[1], JWT_SECRET); // bearer token
       const existingUser = await searchUserByEmail({ email });
@@ -84,30 +93,32 @@ module.exports = app => {
         });
       }
 
-      let { page } = req.query;
+      let { page, name, phone } = req.query;
 
       if (typeof page === 'undefined') {
         page = 1;
       }
 
-      const customLabels = {
-        docs: 'contacts',
-        totalDocs: 'totalContacts',
-      };
-
-      const paginationOptions = {
-        page,
-        limit: 10,
-        customLabels,
-        select: '_ID name phone',
-        sort: 'name',
-      };
+      let filters = {};
+      if (name) {
+        filters = {
+          ...filters,
+          name,
+        };
+      }
+      if (phone) {
+        filters = {
+          ...filters,
+          phone,
+        };
+      }
 
       try {
-        const contacts = await Contact.paginate(
-          { user: existingUser._id },
-          paginationOptions
-        );
+        const contacts = await searchContactsPaginated({
+          user: existingUser._id,
+          filters,
+          page,
+        });
         res.status(200).json(contacts);
       } catch (ex) {
         res.status(500).json({ ex });
@@ -139,7 +150,7 @@ module.exports = app => {
         res.status(400).json({ message: 'phone parameter is required' });
       }
 
-      const newContact = await Contact.create({
+      const newContact = await createContact({
         user: existingUser._id,
         name,
         phone,
@@ -157,7 +168,7 @@ module.exports = app => {
     async (req, res) => {
       const { contactId } = req.params;
       try {
-        const contact = await Contact.findById(contactId);
+        const contact = await findContactById({ contactId });
         if (contact === null) {
           res.status(404).json({ message: 'Contact not found' });
         }
@@ -176,12 +187,12 @@ module.exports = app => {
     async (req, res) => {
       const { contactId } = req.params;
       try {
-        const existingUser = await Contact.findById(contactId);
+        const existingUser = await findContactById({ contactId });
         if (existingUser === null) {
           res.status(400).json({ message: 'Contact not found' });
         }
-        const contact = await Contact.deleteOne({ _id: contactId });
-        res.status(204).json(contact);
+        const contact = await deleteContact({ contactId });
+        res.status(204).json({ message: 'Contact deleted' });
       } catch (ex) {
         res.status(400).json({ error: ex });
       }
