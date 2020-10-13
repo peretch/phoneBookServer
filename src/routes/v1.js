@@ -6,6 +6,7 @@ const { sign, decode } = require('jsonwebtoken');
 const { compare, hash } = require('bcrypt');
 const jwt = require('express-jwt');
 
+const cors = require('cors');
 const User = require('../models/user.model');
 const Contact = require('../models/contact.model');
 
@@ -14,6 +15,8 @@ const allowedMethods = require('../middlewares/allowedMethods');
 
 module.exports = app => {
   const router = express.Router();
+
+  router.use(cors());
 
   // Handling allowed methods for each endpoint
   router.all('/users', allowedMethods(['POST']));
@@ -52,6 +55,10 @@ module.exports = app => {
     const { email, password } = req.body;
     const userDoc = await User.findOne({ email });
 
+    if (!userDoc) {
+      res.status(401).json({ message: 'Invalid credentials' });
+    }
+
     try {
       const login = await compare(password, userDoc.password);
 
@@ -60,7 +67,7 @@ module.exports = app => {
       }
       const token = sign({ email }, JWT_SECRET);
       res.status(200).json({
-        user: email,
+        email,
         token,
       });
     } catch (ex) {
@@ -74,11 +81,8 @@ module.exports = app => {
     jwt({ secret: JWT_SECRET }),
     json(),
     async (req, res) => {
-      let { page } = req.body;
-
-      if (typeof page !== 'undefined' && typeof page !== 'number') {
-        res.status(400).json('The page attribute must be of type number.');
-      }
+      let { page } = req.query;
+      console.log({ page });
 
       if (typeof page === 'undefined') {
         page = 1;
@@ -187,5 +191,5 @@ module.exports = app => {
       .json({ message: 'The URL you are looking for was not found :(' });
   });
 
-  app.use('/v1', router);
+  app.use('/api/v1', router);
 };
