@@ -3,15 +3,20 @@ const express = require('express');
 
 const { json } = require('body-parser');
 const { sign, decode } = require('jsonwebtoken');
-const { compare, hash } = require('bcrypt');
 const jwt = require('express-jwt');
 
 const cors = require('cors');
-const User = require('../models/user.model');
 const Contact = require('../models/contact.model');
 
 const { JWT_SECRET } = process.env;
 const allowedMethods = require('../middlewares/allowedMethods');
+
+const {
+  searchUserByEmail,
+  createUser,
+  authenticateUser,
+} = require('../services/userService');
+const { createToken } = require('../services/jwtService');
 
 module.exports = app => {
   const router = express.Router();
@@ -26,18 +31,11 @@ module.exports = app => {
 
   // CreateUser
   router.post('/users', json(), async (req, res) => {
-    const userBody = req.body;
-
+    const { email, password } = req.body;
     try {
-      const hashed = await hash(userBody.password, 10);
-      const newUser = await User.create({
-        name: userBody.name,
-        email: userBody.email,
-        password: hashed,
-      });
-      const token = await sign({}, JWT_SECRET);
+      const { user, token } = await createUser({ email, password });
       res.status(202).json({
-        user: newUser,
+        email: user.email,
         token,
       });
     } catch (ex) {
@@ -53,19 +51,13 @@ module.exports = app => {
   // Login
   router.post('/sessions', json(), async (req, res) => {
     const { email, password } = req.body;
-    const userDoc = await User.findOne({ email });
-
-    if (!userDoc) {
-      res.status(401).json({ message: 'Invalid credentials' });
-    }
-
     try {
-      const login = await compare(password, userDoc.password);
+      const login = await authenticateUser({ email, password });
 
       if (!login) {
         res.status(401).json({ message: 'Invalid credentials' });
       }
-      const token = sign({ email }, JWT_SECRET);
+      const token = await createToken({ email });
       res.status(200).json({
         email,
         token,
@@ -81,8 +73,18 @@ module.exports = app => {
     jwt({ secret: JWT_SECRET }),
     json(),
     async (req, res) => {
+
+      const auth = req.get('Authorization');
+      const { email } = decode(auth.split(' ')[1], JWT_SECRET); // bearer token
+      const existingUser = await searchUserByEmail({ email });
+
+      if (!existingUser) {
+        res.status(401).json({
+          message: `The username with email ${email} was not found.`,
+        });
+      }
+
       let { page } = req.query;
-      console.log({ page });
 
       if (typeof page === 'undefined') {
         page = 1;
@@ -102,7 +104,10 @@ module.exports = app => {
       };
 
       try {
-        const contacts = await Contact.paginate({}, paginationOptions);
+        const contacts = await Contact.paginate(
+          { user: existingUser._id },
+          paginationOptions
+        );
         res.status(200).json(contacts);
       } catch (ex) {
         res.status(500).json({ ex });
@@ -117,25 +122,23 @@ module.exports = app => {
     json(),
     async (req, res) => {
       const auth = req.get('Authorization');
-      const { username } = decode(auth.split(' ')[1], JWT_SECRET); // bearer token
-
-      const { name, phone } = req.body;
-      if (!name) {
-        res.status(400).send('name parameter is required');
-      }
-      if (!phone) {
-        res.status(400).send('phone parameter is required');
-      }
-
-      const existingUser = await User.findOne({ email: username });
-      if (
-        typeof existingUser === 'undefined' ||
-        typeof existingUser._id === 'undefined'
-      ) {
+      const { email } = decode(auth.split(' ')[1], JWT_SECRET); // bearer token
+      const existingUser = await searchUserByEmail({ email });
+      if (!existingUser) {
         res.status(401).json({
-          message: `The username with email ${username} was not found.`,
+          message: `The username with email ${email} was not found.`,
         });
       }
+
+      const { name, phone } = req.body;
+
+      if (!name || name.trim().length === 0) {
+        res.status(400).json({ message: 'name parameter is required' });
+      }
+      if (!phone || phone.trim().length === 0) {
+        res.status(400).json({ message: 'phone parameter is required' });
+      }
+
       const newContact = await Contact.create({
         user: existingUser._id,
         name,

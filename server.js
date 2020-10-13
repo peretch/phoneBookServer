@@ -11,6 +11,7 @@ setRoutes(app);
 
 const { APP_PORT, APP_HOST, DB_HOST, DB_DATABASE } = process.env;
 
+console.log(`Attemping to connect to mongodb://${DB_HOST}/${DB_DATABASE}`);
 mongoose
   .connect(`mongodb://${DB_HOST}/${DB_DATABASE}`, {
     useNewUrlParser: true,
