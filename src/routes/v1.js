@@ -21,6 +21,7 @@ const {
   searchUserByEmail,
   createUser,
   authenticateUser,
+  recoveryPassword,
 } = require('../services/userService');
 
 const {
@@ -208,6 +209,22 @@ module.exports = app => {
       } catch (ex) {
         res.status(400).json({ error: ex });
       }
+    }
+  );
+
+  router.post(
+    '/users/recovery',
+    jwt({ secret: JWT_SECRET }),
+    async (req, res) => {
+      const auth = req.get('Authorization');
+      const { email } = decode(auth.split(' ')[1], JWT_SECRET); // bearer token
+      const existingUser = await searchUserByEmail({ email });
+      if (!existingUser) {
+        res.status(401).json({
+          message: `The username with email ${email} was not found.`,
+        });
+      }
+      await recoveryPassword({ email });
     }
   );
 

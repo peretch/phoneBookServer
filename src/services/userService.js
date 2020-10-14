@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const { compare, hash } = require('bcrypt');
 const { createToken } = require('./jwtService');
+const { sendEmail } = require('./mailerService');
 
 const User = require('../models/user.model');
 
@@ -30,7 +31,32 @@ const authenticateUser = async ({ email, password }) => {
 };
 
 const recoveryPassword = async ({ email }) => {
-  console.log('Not implemented');
+  console.log('called recovery password');
+  const newPassword =
+    Math.random()
+      .toString(36)
+      .substring(2, 15) +
+    Math.random()
+      .toString(36)
+      .substring(2, 15);
+
+  const hashed = await hash(newPassword, 10);
+
+  const result = await User.update(
+    { email },
+    {
+      password: hashed,
+    }
+  );
+
+  console.log({ result });
+
+  await sendEmail({
+    from: 'webmaster@phonebookapp.com',
+    to: email,
+    subject: 'PhoneBook App - Recovery password',
+    text: `Hey there! here is your new password for Phonebook App: ${newPassword}`,
+  });
 };
 
 module.exports = {
