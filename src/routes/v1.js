@@ -197,11 +197,11 @@ module.exports = app => {
       try {
         const contact = await findContactById({ contactId });
         if (contact === null) {
-          res.status(404).json({ message: 'Contact not found' });
+          res.status(404).send('Contact not found');
         }
         res.status(200).json(contact);
       } catch (ex) {
-        res.status(400).json({ error: ex });
+        res.status(404).send('Contact not found');
       }
     }
   );
