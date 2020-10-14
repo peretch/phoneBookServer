@@ -28,7 +28,6 @@ const {
   createContact,
   deleteContact,
   searchContacts,
-  searchContactsPaginated,
   findContactById,
 } = require('../services/contactService');
 
@@ -82,6 +81,21 @@ module.exports = app => {
     } catch (ex) {
       res.status(500).json({ message: 'An error has ocurred' });
     }
+  });
+
+  router.post('/users/recovery', json(), async (req, res) => {
+    const { email } = req.body;
+    const existingUser = await searchUserByEmail({ email });
+    if (!existingUser) {
+      res.status(401).json({
+        message: `The username with email ${email} was not found.`,
+      });
+    }
+    const ok = await recoveryPassword({ email });
+    if (!ok) {
+      res.status(500).json({ ok });
+    }
+    res.status(200).json({ ok });
   });
 
   // List contact numbers
@@ -209,22 +223,6 @@ module.exports = app => {
       } catch (ex) {
         res.status(400).json({ error: ex });
       }
-    }
-  );
-
-  router.post(
-    '/users/recovery',
-    jwt({ secret: JWT_SECRET }),
-    async (req, res) => {
-      const auth = req.get('Authorization');
-      const { email } = decode(auth.split(' ')[1], JWT_SECRET); // bearer token
-      const existingUser = await searchUserByEmail({ email });
-      if (!existingUser) {
-        res.status(401).json({
-          message: `The username with email ${email} was not found.`,
-        });
-      }
-      await recoveryPassword({ email });
     }
   );
 

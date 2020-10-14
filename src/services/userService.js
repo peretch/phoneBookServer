@@ -42,21 +42,31 @@ const recoveryPassword = async ({ email }) => {
 
   const hashed = await hash(newPassword, 10);
 
-  const result = await User.update(
+  const result = await User.updateOne(
     { email },
     {
       password: hashed,
     }
   );
 
-  console.log({ result });
+  if (result.ok === 1) {
+    console.log(`new passowrd for user "${email}" is ${newPassword}`);
 
-  await sendEmail({
-    from: 'webmaster@phonebookapp.com',
-    to: email,
-    subject: 'PhoneBook App - Recovery password',
-    text: `Hey there! here is your new password for Phonebook App: ${newPassword}`,
-  });
+    try {
+      await sendEmail({
+        from: 'webmaster@phonebookapp.com',
+        to: email,
+        subject: 'PhoneBook App - Recovery password',
+        text: `Hey there! here is your new password for Phonebook App: ${newPassword}`,
+      });
+    } catch (ex) {
+      console.log({ ex });
+      // In case of error, rollback changes
+      return false;
+    }
+    return true;
+  }
+  return false;
 };
 
 module.exports = {

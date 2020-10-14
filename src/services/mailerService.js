@@ -6,7 +6,7 @@ const sendEmail = async ({ from, to, subject, text }) => {
   const transporter = nodemailer.createTransport({
     host: process.env.MAIL_HOST, // smtp.example.com"
     port: process.env.MAIL_PORT, // 465
-    secure: process.env.MAIL_SECURE, // true for 465, false for other ports
+    secure: false,
     auth: {
       user: process.env.MAIL_USER, // generated ethereal user
       pass: process.env.MAIL_PASSWORD, // generated ethereal password
@@ -23,10 +23,7 @@ const sendEmail = async ({ from, to, subject, text }) => {
 
   console.log('Message sent: %s', info.messageId);
   // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
-
-  // Preview only available when sending through an Ethereal account
-  console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
-  // Preview URL: https://ethereal.email/message/WaQKMgKddxQDoou...
+  return true;
 };
 
 module.exports = {
