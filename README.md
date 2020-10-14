@@ -1,8 +1,13 @@
 # Phonebook Server
 This project is an application for a phoneBook. Developed with Express and mongoDB.
 
+
+## Requisites
+- mongodb installed in your server
+- config your parameters in .env file (You can use `.env.example` file as a template)
+
 ## Commands
-- Use `npm run dev` for testing with nodemon
+- Use `npm run dev` for testing with nodemon (by default it will run in port 8080).
 
 # API Documentation
 
