@@ -18,6 +18,9 @@ const ContactSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.String,
       required: true,
     },
+    lastname: {
+      type: mongoose.Schema.Types.String,
+    },
     phone: {
       type: mongoose.Schema.Types.String,
       required: true,

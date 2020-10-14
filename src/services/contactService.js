@@ -5,10 +5,11 @@ const findContactById = async ({ contactId }) => {
   return contact;
 };
 
-const createContact = async ({ user, name, phone }) => {
+const createContact = async ({ user, name, lastname, phone }) => {
   const contact = await Contact.create({
     user,
     name,
+    lastname,
     phone,
   });
   return contact;
@@ -28,7 +29,7 @@ const searchContactsPaginated = async ({ user, filters, page }) => {
     page,
     limit: 10,
     customLabels,
-    select: '_ID name phone',
+    select: '_ID name lastname phone',
     sort: 'name',
   };
   // Fix to use like search

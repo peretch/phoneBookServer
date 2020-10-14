@@ -1,12 +1,17 @@
 require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
 
-const { json } = require('body-parser');
-const { sign, decode } = require('jsonwebtoken');
-const jwt = require('express-jwt');
+const express = require('express');
+
+const { decode } = require('jsonwebtoken');
 
 const { JWT_SECRET } = process.env;
+
+/**
+ * Middlewares
+ */
+const cors = require('cors');
+const jwt = require('express-jwt');
+const { json } = require('body-parser');
 const allowedMethods = require('../middlewares/allowedMethods');
 
 /**
@@ -141,7 +146,7 @@ module.exports = app => {
         });
       }
 
-      const { name, phone } = req.body;
+      const { name, lastname, phone } = req.body;
 
       if (!name || name.trim().length === 0) {
         res.status(400).json({ message: 'name parameter is required' });
@@ -153,10 +158,11 @@ module.exports = app => {
       const newContact = await createContact({
         user: existingUser._id,
         name,
+        lastname,
         phone,
       });
 
-      res.status(201).json({ newContact });
+      res.status(202).json(newContact);
     }
   );
 
@@ -191,7 +197,7 @@ module.exports = app => {
         if (existingUser === null) {
           res.status(400).json({ message: 'Contact not found' });
         }
-        const contact = await deleteContact({ contactId });
+        await deleteContact({ contactId });
         res.status(204).json({ message: 'Contact deleted' });
       } catch (ex) {
         res.status(400).json({ error: ex });
