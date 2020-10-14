@@ -19,6 +19,15 @@ const deleteContact = async ({ contactId }) => {
   const contact = await Contact.deleteOne({ _id: contactId });
 };
 
+const searchContacts = async ({ user, filters }) => {
+  // Fix to use like search
+  Object.keys(filters).map(
+    key => (filters[key] = new RegExp(filters[key], 'i'))
+  );
+  const contacts = await Contact.find({ ...filters, user });
+  return contacts;
+};
+
 const searchContactsPaginated = async ({ user, filters, page }) => {
   const customLabels = {
     docs: 'contacts',
@@ -46,6 +55,7 @@ const searchContactsPaginated = async ({ user, filters, page }) => {
 
 module.exports = {
   createContact,
+  searchContacts,
   searchContactsPaginated,
   findContactById,
   deleteContact,

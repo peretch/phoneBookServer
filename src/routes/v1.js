@@ -26,6 +26,7 @@ const {
 const {
   createContact,
   deleteContact,
+  searchContacts,
   searchContactsPaginated,
   findContactById,
 } = require('../services/contactService');
@@ -98,11 +99,12 @@ module.exports = app => {
         });
       }
 
-      let { page, name, phone } = req.query;
+      // let { page, name, phone } = req.query;
+      const { name, phone } = req.query;
 
-      if (typeof page === 'undefined') {
-        page = 1;
-      }
+      // if (typeof page === 'undefined') {
+      //   page = 1;
+      // }
 
       let filters = {};
       if (name) {
@@ -119,11 +121,15 @@ module.exports = app => {
       }
 
       try {
-        const contacts = await searchContactsPaginated({
+        const contacts = await searchContacts({
           user: existingUser._id,
           filters,
-          page,
         });
+        // const contacts = await searchContactsPaginated({
+        //   user: existingUser._id,
+        //   filters,
+        //   page,
+        // });
         res.status(200).json(contacts);
       } catch (ex) {
         res.status(500).json({ ex });
