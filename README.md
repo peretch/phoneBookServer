@@ -1,17 +1,20 @@
-# phoneBookServer
-This project is an application for a phoneBook. Developed with Express and mongoDB
+# Phonebook Server
+This project is an application for a phoneBook. Developed with Express and mongoDB.
 
 ## Commands
 - Use `npm run dev` for testing with nodemon
 
 # API Documentation
 
-## [POST] /users (Create user)
+## Headers
+All request must have same headers
 
-### Headers
 |Parameter| Value |
 |---|---|
 |Content-Type|application/json|
+
+---
+## [POST] /users (Create user)
 
 ### Request parameters
 #### Body example
@@ -44,12 +47,8 @@ This project is an application for a phoneBook. Developed with Express and mongo
 }
 ```
 
+---
 ## [POST] /sessions (Login)
-
-### Headers
-|Parameter| Value |
-|---|---|
-|Content-Type|application/json|
 
 ### Request parameters
 #### Body example
@@ -73,3 +72,118 @@ This project is an application for a phoneBook. Developed with Express and mongo
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InNlYmFzdGlhbkBwZXJldGNoLmNvbSIsImlhdCI6MTYwMjUwOTI0OH0.0yI2rySNfwX_GifY35sriyO90UCcBikoGG0ebwdLWqs"
 }
 ```
+
+
+---
+## [POST] /users/recovery (Recovery password)
+
+
+### Request parameters
+#### Body example
+```
+{
+	"email": "sebastian@peretch.com"
+}
+```
+#### Parameters
+|Parameter| Type | Description |
+|---|---|---|
+|email|string|Email from account|
+
+
+### Response example
+```
+{
+  "ok": true
+}
+```
+_A mail should be sended if credentials are setted._
+
+
+---
+## [GET] /contacts (List of contacts)
+
+### Request parameters
+
+#### URL Parameters
+|Parameter| Type | Description |
+|---|---|---|
+|name|string|Use for filtering by name|
+|lastname|string|Use for filtering by lastname|
+|email|string|Use for filtering by email|
+
+
+### Response example
+```
+[
+  {
+      "_id": "5f8778a24a47171c55b62b34",
+      "user": "5f84a77822e3877ebafe5458",
+      "name": "Carlos",
+      "lastname": "Bueno",
+      "phone": "+59899512414",
+      "createdAt": "2020-10-14T22:16:02.374Z",
+      "updatedAt": "2020-10-14T22:16:02.374Z",
+      "__v": 0
+  },
+  {
+      "_id": "5f8778ac4a47171c55b62b35",
+      "user": "5f84a77822e3877ebafe5458",
+      "name": "Lucas",
+      "lastname": "Podolsky",
+      "phone": "+496568123123",
+      "createdAt": "2020-10-14T22:16:12.861Z",
+      "updatedAt": "2020-10-14T22:16:12.861Z",
+      "__v": 0
+  },
+]
+```
+---
+## [POST] /contacts (Create contact)
+
+### Request parameters
+#### Body example
+```
+{
+	"name": "Chuck",
+	"lastname": "Norris",
+	"phone": "+165153168856"
+}
+```
+#### Parameters
+|Parameter| Type | Description |
+|---|---|---|
+|name|string|Name for the new contact|
+|lastname|string|Lastname for the new contact|
+|phone|string|Phone for the new contact|
+
+
+### Response example
+```
+{
+  "_id": "5f877c694a47171c55b62b37",
+  "user": "5f84a77822e3877ebafe5458",
+  "name": "Chuck",
+  "lastname": "Norris",
+  "phone": "+165153168856",
+  "createdAt": "2020-10-14T22:32:09.551Z",
+  "updatedAt": "2020-10-14T22:32:09.551Z",
+  "__v": 0
+}
+```
+---
+## [DELETE] /contacts/:contactId (Delete contact)
+
+### Request parameters
+#### Body example
+
+#### Parameters
+|Parameter| Type | Description |
+|---|---|---|
+|contactId|string|contact _id|
+
+### Response example
+```
+{}
+```
+---
