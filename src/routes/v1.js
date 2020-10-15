@@ -216,12 +216,12 @@ module.exports = app => {
       try {
         const existingUser = await findContactById({ contactId });
         if (existingUser === null) {
-          res.status(400).json({ message: 'Contact not found' });
+          res.status(404).send('Contact not found');
         }
         await deleteContact({ contactId });
         res.status(204).json({ message: 'Contact deleted' });
       } catch (ex) {
-        res.status(400).json({ error: ex });
+        res.status(404).send('Contact not found');
       }
     }
   );
